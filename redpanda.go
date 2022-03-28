@@ -38,6 +38,7 @@ const (
 	topicOrdersInsertAVRO = "orders_avro"
 	topicOrdersUpsertAVRO = "orders_upsert_avro"
 	topicTradesInsertAVRO = "trades_avro"
+	topicTradesUpsertAVRO = "trades_upsert_avro"
 
 	schemaOrder = `{"type":"record","name":"order","fields":[{"name":"id","type":"string"},{"name":"user_id","type":"long"},{"name":"stock_code","type":"string"},{"name":"type","type":"string"},{"name":"lot","type":"long"},{"name":"price","type":"int"},{"name":"status","type":"int"}]}`
 	schemaTrade = `{"type":"record","name":"trade","fields":[{"name":"order_id","type":"long"},{"name":"lot","type":"long"},{"name":"lot_multiplier","type":"int"},{"name":"price","type":"int"},{"name":"total","type":"long"},{"name":"created_at","type":"string"}]}`

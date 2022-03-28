@@ -78,3 +78,59 @@ consumerLoop:
 		log.Println("Insert Order Speed:", time.Since(startTime).Milliseconds())
 	}
 }
+
+func UpsertTradeConsumer() {
+	opts := []kgo.Opt{
+		kgo.SeedBrokers(getRedPandaHosts()...),
+		kgo.ConsumeTopics(
+			topicTradesInsertAVRO,
+		),
+	}
+	redPandaClient, err := kgo.NewClient(opts...)
+	if err != nil {
+		log.Println(err)
+		panic(err)
+	}
+
+	db := connectDB(context.Background())
+	defer db.Close()
+
+	startTime := time.Now()
+	schema := avro.MustParse(schemaTrade)
+
+	var counter int64
+
+consumerLoop:
+	for {
+		fetches := redPandaClient.PollRecords(context.Background(), 1000000)
+		for _, fetchErr := range fetches.Errors() {
+			log.Printf("error consuming from topic: topic=%s, partition=%d, err=%v\n",
+				fetchErr.Topic, fetchErr.Partition, fetchErr.Err)
+			break consumerLoop
+		}
+
+		records := fetches.Records()
+		log.Println("Num. of Records:", len(records))
+		for _, record := range fetches.Records() {
+			counter++
+
+			// parse avro to struct
+			var trade tradeAVRO
+			err := avro.Unmarshal(schema, record.Value, &trade)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			err = upsertTrade(context.Background(), db, trade)
+			if err != nil {
+				continue
+			}
+
+			if counter == 1000000 {
+				log.Printf("%d %+v", counter, trade)
+				log.Println("Upsert Trade Speed:", time.Since(startTime).Milliseconds())
+			}
+		}
+	}
+}
