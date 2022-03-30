@@ -71,7 +71,7 @@ func upsertTrade(ctx context.Context, db *pgxpool.Pool, trade tradeAVRO) error {
 		INSERT INTO trades(order_id, lot, lot_multiplier, price, total, created_at)
 		VALUES($1, $2, $3, $4, $5, $6)
 		ON CONFLICT (order_id, created_at)
-		DO UPDATE SET (lot, lot_multiplier, price, total, created_at) = (EXCLUDED.lot, EXCLUDED.lot_multiplier, EXCLUDED.price, EXCLUDED.total, EXCLUDED.created_at);`
+		DO UPDATE SET (lot, lot_multiplier, price, total) = (EXCLUDED.lot, EXCLUDED.lot_multiplier, EXCLUDED.price, EXCLUDED.total);`
 
 	_, err := db.Exec(ctx, query, args...)
 	if err != nil {

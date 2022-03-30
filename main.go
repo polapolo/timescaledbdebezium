@@ -9,7 +9,21 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/hamba/avro"
+	"github.com/riferrei/srclient"
 )
+
+var schemaRegistryTrade *srclient.Schema
+
+func init() {
+	schemaRegistryClient := srclient.CreateSchemaRegistryClient("http://localhost:8081")
+
+	mySchemaRegistryTrade, err := schemaRegistryClient.GetLatestSchema("trades_avro-value")
+	if err != nil {
+		panic(err)
+	}
+
+	schemaRegistryTrade = mySchemaRegistryTrade
+}
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -20,8 +34,8 @@ func main() {
 	defer redPandaClient.Close()
 
 	// consumer
-	go InsertOrderConsumer()
-	go UpsertTradeConsumer()
+	// go InsertOrderConsumer()
+	// go UpsertTradeConsumer()
 
 	// http endpoint
 	r := gin.Default()

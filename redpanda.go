@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
+	"encoding/json"
 	"log"
 	"strconv"
 	"time"
 
 	"github.com/hamba/avro"
+	"github.com/riferrei/srclient"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
@@ -167,11 +170,6 @@ func publishUpsertOrderAVRO(redPandaClient *kgo.Client, numOfUserIDs int, numOfO
 
 // insert trades avro
 func generateInsertTradeAVRO(numOfUserIDs int, numOfOrders int, numOfTrades int) [][]byte {
-	schema, err := avro.Parse(schemaTrade)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	tradeAVROs := make([][]byte, 0)
 	// users
 	for i := 1; i <= numOfUserIDs; i++ {
@@ -181,23 +179,16 @@ func generateInsertTradeAVRO(numOfUserIDs int, numOfOrders int, numOfTrades int)
 
 			// trades
 			for k := 1; k <= numOfTrades; k++ {
-				tradeAVRO, err := avro.Marshal(
-					schema,
-					tradeAVRO{
-						OrderID:       int64(j + offset),
-						Lot:           10,
-						LotMultiplier: 100,
-						Price:         1000,
-						Total:         1000000,
-						CreatedAt:     time.Now().Format(time.RFC3339),
-					},
-				)
-				if err != nil {
-					log.Println(err)
-					continue
+				tradeJSON := tradeJSON{
+					OrderID:       int64(j + offset),
+					Lot:           10,
+					LotMultiplier: 100,
+					Price:         1000,
+					Total:         1000000,
+					CreatedAt:     time.Now().Format("2006-01-02 15:04:05"),
 				}
 
-				tradeAVROs = append(tradeAVROs, tradeAVRO)
+				tradeAVROs = append(tradeAVROs, createAvroBytesBySchema(schemaRegistryTrade, tradeJSON))
 			}
 		}
 	}
@@ -205,12 +196,31 @@ func generateInsertTradeAVRO(numOfUserIDs int, numOfOrders int, numOfTrades int)
 	return tradeAVROs
 }
 
+func createAvroBytesBySchema(schema *srclient.Schema, value interface{}) []byte {
+	schemaIDBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(schemaIDBytes, uint32(schema.ID()))
+
+	valueJSON, _ := json.Marshal(value)
+	native, _, _ := schema.Codec().NativeFromTextual(valueJSON)
+	valueBytes, _ := schema.Codec().BinaryFromNative(nil, native)
+
+	var recordValue []byte
+	recordValue = append(recordValue, byte(0))
+	recordValue = append(recordValue, schemaIDBytes...)
+	recordValue = append(recordValue, valueBytes...)
+
+	return recordValue
+}
+
 func publishInsertTradeAVRO(redPandaClient *kgo.Client, numOfUserIDs int, numOfOrders int, numOfTrades int) {
 	avros := generateInsertTradeAVRO(numOfUserIDs, numOfOrders, numOfTrades)
 
 	records := make([]*kgo.Record, 0)
 	for _, myAVRO := range avros {
-		records = append(records, &kgo.Record{Topic: topicTradesInsertAVRO, Value: myAVRO})
+		records = append(records, &kgo.Record{
+			Topic: topicTradesInsertAVRO,
+			Value: myAVRO,
+		})
 	}
 
 	err := redPandaClient.ProduceSync(context.Background(), records...).FirstErr()

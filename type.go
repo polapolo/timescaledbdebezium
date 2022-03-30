@@ -38,3 +38,12 @@ type tradeAVRO struct {
 	Total         int64  `avro:"total"`
 	CreatedAt     string `avro:"created_at"`
 }
+
+type tradeJSON struct {
+	OrderID       int64  `json:"order_id"`
+	Lot           int64  `json:"lot"`
+	LotMultiplier int    `json:"lot_multiplier"`
+	Price         int    `json:"price"`
+	Total         int64  `json:"total"`
+	CreatedAt     string `json:"created_at"`
+}
