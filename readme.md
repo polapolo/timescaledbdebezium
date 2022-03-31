@@ -1,3 +1,12 @@
+# Issue
+
+- Bad performance ~7k/s (redpanda to db)
+- Timescale hypertable kalo mau pake unique, timestamp harus ikut ke dalam unique nya itu, jadi kalo kita mau upsert ga bisa, karena pasti unique kan itu timestamp
+- learning curve java + connector + schema registry, etc
+- kita harus manage multiple service (kafka connect, schema registry) -> berarti nambah cost juga
+- monitoring pakai JMX -> java punya
+
+
 # Integrate timescaledb with debezium
 
 - Dockerfile Example to integrate with Debezium https://github.com/paul-ylz-tw/debetime_example/blob/main/Dockerfile
@@ -14,7 +23,8 @@
 
 - Kafka Connect Base https://hub.docker.com/r/confluentinc/cp-kafka-connect
 - Kafka Connect Plugin JDBC Connector (Source & Sink) https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc
-- Connect Worker JDBC Config Options https://docs.confluent.io/kafka-connect-jdbc/current/sink-connector/sink_config_options.html
+- Kafka Connect Worker Properties https://docs.confluent.io/platform/current/connect/references/allconfigs.html
+- Kafka Connect Worker JDBC Sink Connector Properties https://docs.confluent.io/kafka-connect-jdbc/current/sink-connector/sink_config_options.html
 - https://docs.confluent.io/platform/current/connect/references/restapi.html
 
 # Schema Registry / Converter
